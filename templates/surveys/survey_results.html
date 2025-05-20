@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load survey_extras %}
+
+{% block title %}Результаты опроса: {{ survey.title }} | Survify{% endblock %}
+
+{% block extra_css %}
+<style>
+    .custom-progress-container {
+        width: 100%;
+        background-color: #e9ecef;
+        border-radius: 0.25rem;
+    }
+    .custom-progress-bar {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+        color: #fff;
+        text-align: center;
+        white-space: nowrap;
+        background-color: #0d6efd;
+        transition: width 0.6s ease;
+        border-radius: 0.25rem;
+        height: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Результаты опроса: {{ survey.title }}</h2>
+            <div>
+                <a href="{% url 'survey_detail' survey.id %}" class="btn btn-outline-info">
+                    <i class="fas fa-eye"></i> Просмотр опроса
+                </a>
+                <a href="{% url 'survey_edit' survey.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-edit"></i> Редактировать
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">Статистика по вопросам</h3>
+            </div>
+            <div class="card-body">
+                {% if questions_data %}
+                    {% for question_data in questions_data %}
+                        <div class="question-stats mb-4 pb-4 border-bottom">
+                            <h4>{{ forloop.counter }}. {{ question_data.question.text }}</h4>
+                            <p class="text-muted">
+                                Тип: {{ question_data.question.get_question_type_display }}
+                                {% if question_data.question.required %}
+                                    <span class="badge bg-danger">Обязательный</span>
+                                {% endif %}
+                            </p>
+                            
+                            {% if question_data.question.question_type == 'text' %}
+                                <h5>Текстовые ответы:</h5>
+                                {% if question_data.text_answers %}
+                                    <div class="text-answers mt-3">
+                                        {% for answer in question_data.text_answers %}
+                                            <div class="p-2 mb-2 bg-light rounded">
+                                                <p class="mb-1">{{ answer.text_answer|default:"[Пустой ответ]" }}</p>
+                                                <small class="text-muted">
+                                                    {% if answer.user %}
+                                                        {{ answer.user.get_full_name|default:answer.user.email }} - {{ answer.created_at|date:"d.m.Y H:i" }}
+                                                    {% else %}
+                                                        Анонимный пользователь - {{ answer.created_at|date:"d.m.Y H:i" }}
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">Пока нет ответов на этот вопрос.</p>
+                                {% endif %}
+                            {% else %}
+                                <h5>Варианты ответов:</h5>
+                                {% if question_data.choices %}
+                                    <div class="chart-container mt-3">
+                                        <div class="row">
+                                            {% for choice in question_data.choices %}
+                                                <div class="col-md-12 mb-2">
+                                                    <label class="mb-1">{{ choice.text }} ({{ choice.count }})</label>
+                                                    <div class="custom-progress-container">
+                                                        <div class="custom-progress-bar" data-percentage="{{ choice.percentage|floatformat:1 }}">
+                                                            {{ choice.percentage|floatformat:1 }}%
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">Нет данных для отображения.</p>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Нет данных для отображения. Возможно, еще никто не прошел опрос или в опросе нет вопросов.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">Общая информация</h3>
+            </div>
+            <div class="card-body">
+                <p><strong>Всего ответов:</strong> {{ responses.count }}</p>
+                <p><strong>Первый ответ:</strong> 
+                    {% if responses.last %}
+                        {{ responses.last.submitted_at|date:"d.m.Y H:i" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </p>
+                <p><strong>Последний ответ:</strong> 
+                    {% if responses.first %}
+                        {{ responses.first.submitted_at|date:"d.m.Y H:i" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">Респонденты</h3>
+            </div>
+            <div class="card-body">
+                {% if responses %}
+                    <div class="list-group">
+                        {% for response in responses %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">
+                                        {% if response.user %}
+                                            {{ response.user.get_full_name|default:response.user.email }}
+                                        {% else %}
+                                            Анонимный пользователь
+                                        {% endif %}
+                                    </h5>
+                                    <small>{{ response.submitted_at|date:"d.m.Y H:i" }}</small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Пока никто не прошел опрос.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Установка правильной ширины для progress-bar
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBars = document.querySelectorAll('.custom-progress-bar');
+        progressBars.forEach(function(bar) {
+            const percentage = parseFloat(bar.getAttribute('data-percentage'));
+            bar.style.width = percentage + '%';
+        });
+    });
+</script>
+{% endblock %} 

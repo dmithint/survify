@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ survey.title }} | Survify{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>{{ survey.title }}</h2>
+            <div>
+                {% if is_owner %}
+                    <a href="{% url 'survey_edit' survey.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Редактировать
+                    </a>
+                    <a href="{% url 'survey_results' survey.id %}" class="btn btn-outline-success">
+                        <i class="fas fa-chart-bar"></i> Результаты
+                    </a>
+                {% endif %}
+                
+                {% if not already_responded and not is_owner %}
+                    <a href="{% url 'survey_take' survey.id %}" class="btn btn-primary">
+                        <i class="fas fa-poll-h"></i> Пройти опрос
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">Информация об опросе</h3>
+            </div>
+            <div class="card-body">
+                <p class="lead">{{ survey.description }}</p>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p><strong>Создатель:</strong> {{ survey.created_by.username }}</p>
+                        <p><strong>Дата создания:</strong> {{ survey.created_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                    <div>
+                        <p><strong>Тип доступа:</strong> {{ survey.get_privacy_display }}</p>
+                        <p><strong>Вопросов:</strong> {{ questions|length }}</p>
+                    </div>
+                </div>
+                
+                {% if already_responded %}
+                    <div class="alert alert-success mt-3">
+                        <i class="fas fa-check-circle"></i> Вы уже прошли этот опрос.
+                    </div>
+                {% elif is_owner %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i> Вы являетесь создателем данного опроса.
+                    </div>
+                {% else %}
+                    <div class="mt-4">
+                        <a href="{% url 'survey_take' survey.id %}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-poll-h"></i> Пройти опрос
+                        </a>
+                    </div>
+                {% endif %}
+                
+                <!-- Ссылка для шаринга -->
+                <div class="mt-4">
+                    <h5>Поделиться опросом:</h5>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="{{ request.scheme }}://{{ request.get_host }}{% url 'survey_by_link' survey.short_code %}" readonly id="shareUrl">
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyShareUrl()">
+                            <i class="fas fa-copy"></i> Копировать
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">Вопросы</h3>
+            </div>
+            <div class="card-body">
+                {% if questions %}
+                    <ol class="list-group list-group-numbered">
+                        {% for question in questions %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div>{{ question.text }}</div>
+                                    <small class="text-muted">
+                                        {{ question.get_question_type_display }}
+                                        {% if question.required %}
+                                            <span class="badge bg-danger">Обязательный</span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> В этом опросе пока нет вопросов.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyShareUrl() {
+    var copyText = document.getElementById("shareUrl");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    
+    alert("Ссылка скопирована!");
+}
+</script>
+{% endblock %} 

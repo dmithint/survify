@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление опроса | Survify{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h2 class="card-title mb-0">Удаление опроса</h2>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> Внимание! Вы собираетесь удалить опрос "{{ survey.title }}". Это действие нельзя будет отменить.
+                </div>
+                
+                <p>При удалении опроса будут удалены:</p>
+                <ul>
+                    <li>Все вопросы опроса</li>
+                    <li>Все ответы пользователей</li>
+                    <li>Все статистические данные</li>
+                </ul>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">Подтвердить удаление</button>
+                        <a href="{% url 'survey_edit' survey.id %}" class="btn btn-secondary">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

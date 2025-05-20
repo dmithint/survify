@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Прохождение опроса: {{ survey.title }} | Survify{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'survey_detail' survey.id %}">{{ survey.title }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Прохождение опроса</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="card-title mb-0">{{ survey.title }}</h2>
+            </div>
+            <div class="card-body">
+                <p class="lead">{{ survey.description }}</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="questions-container">
+                        {% for question, form in forms %}
+                            <div class="question-card mb-4 p-3 border rounded">
+                                <h4 class="mb-3">
+                                    {{ forloop.counter }}. {{ question.text }}
+                                    {% if question.required %}
+                                        <span class="badge bg-danger">Обязательный</span>
+                                    {% endif %}
+                                </h4>
+                                
+                                <div class="form-group">
+                                    {% if question.question_type == 'text' %}
+                                        {{ form|crispy }}
+                                    {% else %}
+                                        <div class="mb-3">{{ form }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">Отправить</button>
+                        <a href="{% url 'survey_detail' survey.id %}" class="btn btn-outline-secondary">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .question-card {
+        background-color: #f9f9f9;
+        transition: all 0.3s ease;
+    }
+    .question-card:hover {
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        background-color: #fff;
+    }
+    .errorlist {
+        color: #dc3545;
+        list-style-type: none;
+        padding-left: 0;
+        margin-top: 5px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %} 

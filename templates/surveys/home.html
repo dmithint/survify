@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная | Survify{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="jumbotron p-4 p-md-5 text-white rounded bg-primary">
+            <div class="col-md-8 px-0">
+                <h1 class="display-4">Создавайте и проходите опросы</h1>
+                <p class="lead my-3">Survify - сервис для создания и прохождения опросов. Создавайте свои опросы, делитесь ими с друзьями и получайте результаты.</p>
+                {% if user.is_authenticated %}
+                    <p class="lead mb-0">
+                        <a href="{% url 'survey_create' %}" class="btn btn-light text-primary font-weight-bold">Создать опрос</a>
+                        <a href="{% url 'profile' %}" class="btn btn-outline-light font-weight-bold">Мои опросы</a>
+                    </p>
+                {% else %}
+                    <p class="lead mb-0">
+                        <a href="{% url 'register' %}" class="btn btn-light text-primary font-weight-bold">Регистрация</a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-light font-weight-bold">Вход</a>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="mb-4">Публичные опросы</h2>
+        
+        {% if surveys %}
+            <div class="row">
+                {% for survey in surveys %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ survey.title }}</h5>
+                                <p class="card-text">{{ survey.description|truncatechars:100 }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">{{ survey.created_at|date:"d.m.Y" }}</small>
+                                    <small class="text-muted">Автор: {{ survey.created_by.username }}</small>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent border-top-0">
+                                <a href="{% url 'survey_detail' survey.id %}" class="btn btn-primary btn-sm w-100">Перейти к опросу</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                На данный момент нет публичных опросов. Будьте первым, кто создаст опрос!
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

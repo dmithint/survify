@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if question %}Редактирование вопроса{% else %}Добавление вопроса{% endif %} | Survify
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .choice-container {
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    .delete-row {
+        color: #dc3545;
+        cursor: pointer;
+    }
+    #div_id_question_type .controls {
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'survey_edit' survey.id %}">{{ survey.title }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    {% if question %}Редактирование вопроса{% else %}Добавление вопроса{% endif %}
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="card-title mb-0">
+                    {% if question %}Редактирование вопроса{% else %}Добавление вопроса{% endif %}
+                </h2>
+            </div>
+            <div class="card-body">
+                <form method="post" id="question-form">
+                    {% csrf_token %}
+                    
+                    <!-- Основная форма вопроса -->
+                    {{ question_form|crispy }}
+                    
+                    <!-- Варианты ответов (появляются только для соответствующих типов) -->
+                    <div id="choices-container" style="display: none;">
+                        <hr>
+                        <h4>Варианты ответов</h4>
+                        <p>Добавьте варианты ответов для этого вопроса:</p>
+                        
+                        {{ formset.management_form }}
+                        
+                        <div id="formset-container">
+                            {% for form in formset %}
+                                <div class="choice-container">
+                                    <div class="d-flex">
+                                        <div class="flex-grow-1">
+                                            {{ form|crispy }}
+                                        </div>
+                                        <div class="align-self-center ms-2">
+                                            <a class="delete-row" title="Удалить вариант">
+                                                <i class="fas fa-times-circle fa-lg"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <button type="button" id="add-choice" class="btn btn-outline-secondary mt-2">
+                            <i class="fas fa-plus-circle"></i> Добавить вариант
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <a href="{% url 'survey_edit' survey.id %}" class="btn btn-secondary">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        var questionType = $('#id_question_type');
+        var choicesContainer = $('#choices-container');
+        
+        // Функция для показа/скрытия блока с вариантами ответов
+        function toggleChoicesContainer() {
+            if (questionType.val() === 'radio' || questionType.val() === 'checkbox') {
+                choicesContainer.show();
+            } else {
+                choicesContainer.hide();
+            }
+        }
+        
+        // Показываем/скрываем при загрузке страницы
+        toggleChoicesContainer();
+        
+        // Показываем/скрываем при изменении типа вопроса
+        questionType.change(function() {
+            toggleChoicesContainer();
+        });
+        
+        // Обработка добавления нового варианта ответа
+        $('#add-choice').click(function() {
+            var totalForms = $('#id_form-TOTAL_FORMS');
+            var formCount = parseInt(totalForms.val());
+            
+            // Клонируем первую форму из набора
+            var newForm = $('#formset-container .choice-container:first').clone(true);
+            
+            // Обновляем атрибуты и очищаем значения
+            newForm.find(':input').each(function() {
+                var name = $(this).attr('name');
+                if (name) {
+                    name = name.replace('-0-', '-' + formCount + '-');
+                    $(this).attr('name', name);
+                    
+                    var id = $(this).attr('id');
+                    if (id) {
+                        id = id.replace('-0-', '-' + formCount + '-');
+                        $(this).attr('id', id);
+                    }
+                }
+                
+                // Очищаем значение, если это не кнопка или чекбокс DELETE
+                if ($(this).attr('type') !== 'button' && !$(this).hasClass('delete-checkbox')) {
+                    $(this).val('');
+                }
+            });
+            
+            // Обновляем атрибуты и тексты labels
+            newForm.find('label').each(function() {
+                var forAttr = $(this).attr('for');
+                if (forAttr) {
+                    forAttr = forAttr.replace('-0-', '-' + formCount + '-');
+                    $(this).attr('for', forAttr);
+                }
+            });
+            
+            // Добавляем новую форму в контейнер
+            $('#formset-container').append(newForm);
+            
+            // Увеличиваем счетчик форм
+            totalForms.val(formCount + 1);
+        });
+        
+        // Обработка удаления варианта ответа
+        $('.delete-row').click(function() {
+            var container = $(this).closest('.choice-container');
+            var deleteCheckbox = container.find('input[type=checkbox][name$=DELETE]');
+            
+            if (deleteCheckbox.length) {
+                // Если есть чекбокс DELETE (для существующих записей), отмечаем его
+                deleteCheckbox.prop('checked', true);
+                container.hide();
+            } else {
+                // Иначе удаляем элемент из DOM (для новых, еще не сохраненных записей)
+                container.remove();
+                
+                // Обновляем счетчик форм
+                var totalForms = parseInt($('#id_form-TOTAL_FORMS').val());
+                $('#id_form-TOTAL_FORMS').val(totalForms - 1);
+                
+                // Перенумеровываем оставшиеся формы
+                $('#formset-container .choice-container').each(function(index) {
+                    $(this).find(':input').each(function() {
+                        updateElementIndex(this, 'form', index);
+                    });
+                    
+                    $(this).find('label').each(function() {
+                        var forAttr = $(this).attr('for');
+                        if (forAttr) {
+                            forAttr = forAttr.replace(/form-\d+-/g, 'form-' + index + '-');
+                            $(this).attr('for', forAttr);
+                        }
+                    });
+                });
+            }
+        });
+        
+        // Функция для обновления индекса элемента
+        function updateElementIndex(el, prefix, ndx) {
+            var id_regex = new RegExp('(' + prefix + '-\\d+-)');
+            var replacement = prefix + '-' + ndx + '-';
+            
+            if ($(el).attr("for")) {
+                $(el).attr("for", $(el).attr("for").replace(id_regex, replacement));
+            }
+            if (el.id) {
+                el.id = el.id.replace(id_regex, replacement);
+            }
+            if (el.name) {
+                el.name = el.name.replace(id_regex, replacement);
+            }
+        }
+    });
+</script>
+{% endblock %} 
