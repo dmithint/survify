@@ -65,7 +65,7 @@ python manage.py runserver
 ## Технологии
 
 - Backend: Django, Django REST Framework
-- База данных: MongoDB (через Djongo)
+- База данных: PostgreSQL
 - Frontend: Bootstrap 5, jQuery, Font Awesome
 - Верстка: HTML5, CSS3, JavaScript
 
