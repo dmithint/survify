@@ -16,7 +16,7 @@ Survify - это веб-приложение на Django для создания
 ### Требования
 
 - Python 3.8+
-- MongoDB
+- PostgreSQL
 - pip
 
 ### Подготовка
